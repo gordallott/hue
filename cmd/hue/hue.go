@@ -28,7 +28,7 @@ func main() {
 	philipsHue := &Hue{*ip, *userName, *deviceType}
 
 	if *register {
-		if err := philipsHue.RegisterUser(); err != nil {
+		if err := philipsHue.PostUser(); err != nil {
 			if hueErr, ok := err.(*HueError); ok {
 				if hueErr.Type == 101 {
 					log.Fatalf("Please press the link button on the router and then try again.")
@@ -39,8 +39,8 @@ func main() {
 	}
 
 	if *dumpUserInfo {
-		var userInfo UserInfoResponseBody
-		if err := philipsHue.FetchUserInfo(&userInfo); err != nil {
+		userInfo := &GetUserResponse{}
+		if err := philipsHue.GetUser(userInfo); err != nil {
 			log.Fatalf("Unable to fetch user info: %v", err)
 		}
 	}
@@ -50,17 +50,22 @@ func main() {
 	if *light != "" {
 		lights = append(lights, *light)
 	} else {
-		var lightsInfo LightsResponseBody
-		if err := philipsHue.FetchLights(&lightsInfo); err != nil {
+		lightsInfo := &GetLightsResponse{}
+		if err := philipsHue.GetLights(lightsInfo); err != nil {
 			log.Fatalf("Unable to fetch lights: %v", err)
 		}
-		for lightName, _ := range lightsInfo {
+		for lightName, _ := range *lightsInfo {
 			lights = append(lights, lightName)
+
+			lightInfo := &GetLightResponse{}
+			if err := philipsHue.GetLight(lightName, lightInfo); err != nil {
+				log.Fatalf("Unable to fetch light: %v", err)
+			}
 		}
 	}
 	log.Printf("Controlling lights: %v", strings.Join(lights, ", "))
 
-	state := &LightRequestBody{}
+	state := &PutLightRequest{}
 	state.On = on
 	if *hue >= 0 {
 		state.Hue = hue
@@ -73,7 +78,7 @@ func main() {
 	}
 
 	for _, lightName := range lights {
-		if err := philipsHue.ChangeLight(lightName, state); err != nil {
+		if err := philipsHue.PutLight(lightName, state); err != nil {
 			log.Fatalf("Unable to change light %v: %v", lightName, err)
 		}
 	}

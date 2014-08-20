@@ -148,28 +148,32 @@ func (hue *Hue) put(path string, reqBody interface{}, respBody interface{}) erro
 	return nil
 }
 
+type LightState struct {
+	On        bool
+	Hue       int
+	Sat       int
+	Bri       int
+	Alert     string
+	ColorMode string
+	CT        int
+	Effect    string
+	Reachable bool
+	XY        []float64
+}
+
+type Light struct {
+	State       LightState
+	Type        string
+	Name        string
+	ModelId     string
+	SWVersion   string
+	PointSymbol map[string]string
+}
+
 // User Info
 
-type UserInfoResponseBody struct {
-	Lights map[string]struct {
-		State struct {
-			On        bool
-			Hue       int
-			Sat       int
-			Bri       int
-			Alert     string
-			ColorMode string
-			ct        int
-			Effect    string
-			Reachable bool
-			XY        []float64
-		}
-		Type        string
-		Name        string
-		ModelId     string
-		SWVersion   string
-		PointSymbol map[string]string
-	}
+type GetUserResponse struct {
+	Lights map[string]Light
 	Groups map[string]interface{}
 	Config struct {
 		Gateway   string
@@ -212,7 +216,7 @@ type UserInfoResponseBody struct {
 	}
 }
 
-func (hue *Hue) FetchUserInfo(resp *UserInfoResponseBody) error {
+func (hue *Hue) GetUser(resp *GetUserResponse) error {
 	log.Printf("Fetching user info...")
 
 	path := "/api/" + hue.UserName
@@ -229,28 +233,28 @@ func (hue *Hue) FetchUserInfo(resp *UserInfoResponseBody) error {
 
 // User Registration
 
-type UserRegistrationRequestBody struct {
+type postUserRequest struct {
 	Username   string `json:"username"`
 	DeviceType string `json:"devicetype"`
 }
 
-type UserRegistrationResponseBody []struct {
+type postUserResponse []struct {
 	Success struct {
 		Username string
 	}
 }
 
-func (hue *Hue) RegisterUser() error {
+func (hue *Hue) PostUser() error {
 	log.Printf("Registering user...")
 
 	path := "/api"
 
-	reqBody := &UserRegistrationRequestBody{
+	reqBody := &postUserRequest{
 		hue.UserName,
 		hue.DeviceType,
 	}
 
-	var respBody UserRegistrationResponseBody
+	var respBody postUserResponse
 	if err := hue.post(path, &reqBody, &respBody); err != nil {
 		log.Printf("Failed to register user: %v", err)
 		return err
@@ -263,17 +267,35 @@ func (hue *Hue) RegisterUser() error {
 
 // Fetching Light State
 
-type LightsResponseBody map[string]struct {
+type GetLightsResponse map[string]struct {
 	Name string
 }
 
-func (hue *Hue) FetchLights(resp *LightsResponseBody) error {
+func (hue *Hue) GetLights(resp *GetLightsResponse) error {
 	log.Printf("Fetching current lights...")
 
 	path := "/api/" + hue.UserName + "/lights"
 
 	if err := hue.get(path, resp); err != nil {
 		log.Printf("Failed to fetch lights: %v", err)
+		return err
+	}
+
+	log.Printf("Got lights info: %v", *resp)
+
+	return nil
+}
+
+type GetLightResponse Light
+
+func (hue *Hue) GetLight(id string, resp *GetLightResponse) error {
+	log.Printf("Fetching light state...")
+
+	path := "/api/" + hue.UserName + "/lights/" + id
+	log.Printf("path: %v", path)
+
+	if err := hue.get(path, resp); err != nil {
+		log.Printf("Failed to fetch light: %v", err)
 		return err
 	}
 
@@ -284,24 +306,24 @@ func (hue *Hue) FetchLights(resp *LightsResponseBody) error {
 
 // Setting Light State
 
-type LightRequestBody struct {
+type PutLightRequest struct {
 	On  *bool `json:"on,omitempty"`
 	Hue *int  `json:"hue,omitempty"`
 	Sat *int  `json:"sat,omitempty"`
 	Bri *int  `json:"bri,omitempty"`
 }
 
-type LightResponseBody []struct {
+type putLightResponse []struct {
 	Success map[string]interface{}
 }
 
-func (hue *Hue) ChangeLight(id string, state *LightRequestBody) error {
+func (hue *Hue) PutLight(id string, state *PutLightRequest) error {
 	log.Printf("Changing light state...")
 
 	path := "/api/" + hue.UserName + "/lights/" + id + "/state"
 	log.Printf("path: %v", path)
 
-	var respBody LightResponseBody
+	var respBody putLightResponse
 	if err := hue.put(path, state, &respBody); err != nil {
 		log.Printf("Failed to change light state: %v", err)
 		return err
