@@ -8,9 +8,7 @@ import (
 )
 
 func main() {
-	ip := flag.String("ip", "192.168.1.3", "IP Address of Philips Hue hub.")
-	userName := flag.String("username", "HueGoRaspberryPiUser", "Username for Hue hub.")
-	deviceType := flag.String("device_type", "HueGoRaspberryPi", "Device type for Hue hub.")
+	Flags()
 
 	register := flag.Bool("register", false, "Whether to register the user with the Hue hub.")
 
@@ -25,7 +23,7 @@ func main() {
 
 	flag.Parse()
 
-	philipsHue := &Hue{*ip, *userName, *deviceType}
+	philipsHue := FromFlags()
 
 	if *register {
 		if err := philipsHue.PostUser(); err != nil {

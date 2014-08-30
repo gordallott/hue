@@ -3,6 +3,7 @@ package hue
 import (
 	"bytes"
 	"encoding/json"
+  "flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -35,6 +36,21 @@ func (errs *HueAggregateError) Error() string {
 		desc = fmt.Sprintf("%v%v\n", desc, err.Error.Error())
 	}
 	return desc
+}
+
+// Flags for easy standard instance construction.
+var ip string
+var userName string
+var deviceType string
+
+func Flags() {
+	flag.StringVar(&ip, "hue_ip", "192.168.1.3", "IP Address of Philips Hue hub.")
+	flag.StringVar(&userName, "hue_username", "HueGoRaspberryPiUser", "Username for Hue hub.")
+	flag.StringVar(&deviceType, "hue_device_type", "HueGoRaspberryPi", "Device type for Hue hub.")
+}
+
+func FromFlags() *Hue {
+	return &Hue{ip, userName, deviceType}
 }
 
 func processJsonResponse(resp *http.Response, jsonBody interface{}) error {
