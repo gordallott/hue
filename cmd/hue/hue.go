@@ -1,3 +1,4 @@
+// The hue command lets you use the Philips Hue API from the command line.
 package main
 
 import (

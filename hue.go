@@ -1,3 +1,4 @@
+// Package hue provides an API for controlling Philips Hue light bulbs.
 package hue
 
 import (
@@ -10,12 +11,14 @@ import (
 	"net/http"
 )
 
+// Hue contains information for connecting to a Hue hub.
 type Hue struct {
 	IpAddress  string
 	UserName   string
 	DeviceType string
 }
 
+// HueError is an error returned from the Hue API.
 type HueError struct {
 	Type        int
 	Address     string
@@ -26,6 +29,8 @@ func (err *HueError) Error() string {
 	return fmt.Sprintf("Hue Error %v: %v %v", err.Type, err.Address, err.Description)
 }
 
+// HueAggregateError is a collection of multiple errors, for API calls that affect multiple lights
+// or change multiple settings.
 type HueAggregateError []struct {
 	Error HueError
 }
@@ -43,12 +48,14 @@ var ip string
 var userName string
 var deviceType string
 
+// Flags initializes a set of flags for setting standard Hue connection options.
 func Flags() {
 	flag.StringVar(&ip, "hue_ip", "192.168.1.3", "IP Address of Philips Hue hub.")
 	flag.StringVar(&userName, "hue_username", "HueGoRaspberryPiUser", "Username for Hue hub.")
 	flag.StringVar(&deviceType, "hue_device_type", "HueGoRaspberryPi", "Device type for Hue hub.")
 }
 
+// FromFlags creates a new Hue instance using the values specified by the common flags.
 func FromFlags() *Hue {
 	return &Hue{ip, userName, deviceType}
 }
@@ -164,6 +171,7 @@ func (hue *Hue) put(path string, reqBody interface{}, respBody interface{}) erro
 	return nil
 }
 
+// LightState contains the mutable state of a single light.
 type LightState struct {
 	On        bool
 	Hue       int
@@ -177,6 +185,7 @@ type LightState struct {
 	XY        []float64
 }
 
+// Light contains all of the info about a light.
 type Light struct {
 	State       LightState
 	Type        string
@@ -186,8 +195,7 @@ type Light struct {
 	PointSymbol map[string]string
 }
 
-// User Info
-
+// GetUserResponse is the structure returned from the GetUser function.
 type GetUserResponse struct {
 	Lights map[string]Light
 	Groups map[string]interface{}
@@ -232,6 +240,7 @@ type GetUserResponse struct {
 	}
 }
 
+// GetUser fetches information about the user of this Hue connection.
 func (hue *Hue) GetUser(resp *GetUserResponse) error {
 	log.Printf("Fetching user info...")
 
@@ -247,8 +256,6 @@ func (hue *Hue) GetUser(resp *GetUserResponse) error {
 	return nil
 }
 
-// User Registration
-
 type postUserRequest struct {
 	Username   string `json:"username"`
 	DeviceType string `json:"devicetype"`
@@ -260,6 +267,7 @@ type postUserResponse []struct {
 	}
 }
 
+// PostUser registers the given user with the Hue hub.
 func (hue *Hue) PostUser() error {
 	log.Printf("Registering user...")
 
@@ -281,12 +289,12 @@ func (hue *Hue) PostUser() error {
 	return nil
 }
 
-// Fetching Light State
-
+// GetLightsResponse is the structure returned by GetLights.
 type GetLightsResponse map[string]struct {
 	Name string
 }
 
+// GetLights returns some basic information about all of the lights.
 func (hue *Hue) GetLights(resp *GetLightsResponse) error {
 	log.Printf("Fetching current lights...")
 
@@ -302,8 +310,10 @@ func (hue *Hue) GetLights(resp *GetLightsResponse) error {
 	return nil
 }
 
+// GetLightsResponse is the result of the GetLight function.
 type GetLightResponse Light
 
+// GetLight gets all of the information about a single light.
 func (hue *Hue) GetLight(id string, resp *GetLightResponse) error {
 	log.Printf("Fetching light state...")
 
@@ -320,8 +330,8 @@ func (hue *Hue) GetLight(id string, resp *GetLightResponse) error {
 	return nil
 }
 
-// Setting Light State
-
+// PutLightRequest is the input to the PutLight method.
+// All of the members are pointers because they are optional.
 type PutLightRequest struct {
 	On  *bool `json:"on,omitempty"`
 	Hue *int  `json:"hue,omitempty"`
@@ -333,6 +343,7 @@ type putLightResponse []struct {
 	Success map[string]interface{}
 }
 
+// PutLight changes the state of a light to the parameters specified in state.
 func (hue *Hue) PutLight(id string, state *PutLightRequest) error {
 	log.Printf("Changing light state...")
 
