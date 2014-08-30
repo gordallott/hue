@@ -3,7 +3,7 @@ package hue
 import (
 	"bytes"
 	"encoding/json"
-  "flag"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
