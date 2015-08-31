@@ -75,8 +75,6 @@ func processJsonResponse(resp *http.Response, jsonBody interface{}) error {
 		return err
 	}
 
-	log.Printf("Got response: %v", string(body))
-
 	// Check whether it's actually an error.
 	var hueErr HueAggregateError
 	if err = json.Unmarshal(body, &hueErr); err == nil {
@@ -147,7 +145,6 @@ func (hue *Hue) put(path string, reqBody interface{}, respBody interface{}) erro
 		log.Printf("Unable to create JSON for request: %v", err)
 		return err
 	}
-	log.Printf("Request body: %v", string(data))
 	reqReader := bytes.NewReader(data)
 
 	req, err := http.NewRequest("PUT", url, reqReader)
@@ -242,7 +239,6 @@ type GetUserResponse struct {
 
 // GetUser fetches information about the user of this Hue connection.
 func (hue *Hue) GetUser(resp *GetUserResponse) error {
-	log.Printf("Fetching user info...")
 
 	path := "/api/" + hue.UserName
 
@@ -250,8 +246,6 @@ func (hue *Hue) GetUser(resp *GetUserResponse) error {
 		log.Printf("Failed to fetch user info: %v", err)
 		return err
 	}
-
-	log.Printf("Got user info: %v", resp)
 
 	return nil
 }
@@ -269,7 +263,6 @@ type postUserResponse []struct {
 
 // PostUser registers the given user with the Hue hub.
 func (hue *Hue) PostUser() error {
-	log.Printf("Registering user...")
 
 	path := "/api"
 
@@ -284,8 +277,6 @@ func (hue *Hue) PostUser() error {
 		return err
 	}
 
-	log.Printf("Registered user: %v", respBody)
-
 	return nil
 }
 
@@ -296,7 +287,6 @@ type GetLightsResponse map[string]struct {
 
 // GetLights returns some basic information about all of the lights.
 func (hue *Hue) GetLights(resp *GetLightsResponse) error {
-	log.Printf("Fetching current lights...")
 
 	path := "/api/" + hue.UserName + "/lights"
 
@@ -304,8 +294,6 @@ func (hue *Hue) GetLights(resp *GetLightsResponse) error {
 		log.Printf("Failed to fetch lights: %v", err)
 		return err
 	}
-
-	log.Printf("Got lights info: %v", *resp)
 
 	return nil
 }
@@ -315,17 +303,13 @@ type GetLightResponse Light
 
 // GetLight gets all of the information about a single light.
 func (hue *Hue) GetLight(id string, resp *GetLightResponse) error {
-	log.Printf("Fetching light state...")
 
 	path := "/api/" + hue.UserName + "/lights/" + id
-	log.Printf("path: %v", path)
 
 	if err := hue.get(path, resp); err != nil {
 		log.Printf("Failed to fetch light: %v", err)
 		return err
 	}
-
-	log.Printf("Got light info: %v", *resp)
 
 	return nil
 }
@@ -345,18 +329,13 @@ type putLightResponse []struct {
 
 // PutLight changes the state of a light to the parameters specified in state.
 func (hue *Hue) PutLight(id string, state *PutLightRequest) error {
-	log.Printf("Changing light state...")
 
 	path := "/api/" + hue.UserName + "/lights/" + id + "/state"
-	log.Printf("path: %v", path)
 
 	var respBody putLightResponse
 	if err := hue.put(path, state, &respBody); err != nil {
-		log.Printf("Failed to change light state: %v", err)
 		return err
 	}
-
-	log.Printf("Light change response: %v", respBody)
 
 	return nil
 }
